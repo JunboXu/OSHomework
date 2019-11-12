@@ -97,7 +97,6 @@ void input(FILE* fat12) {
 								preput("\n", 0);
 							}
 							else {
-
 								ls(fat12, beginx, str2, 0);
 							}
 						}
@@ -141,7 +140,13 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam) {
 	preput(_itoa(txtn, str, 10), 0);
 	preput(":", 0);
 	preput("\n", 0);
-
+	if ((strlen(path)!=0)&& (strlen(path) != 1))
+	{
+		preput(".", 0);
+		preput("\n", 0);
+		preput("..", 0);
+		preput("\n", 0);
+	}
 	for (int i = 0; i < 15; i++)//第一遍遍历打印直属内容
 	{
 		fseek(fat12, begin + i * 32, 0);
