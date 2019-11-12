@@ -21,6 +21,7 @@ struct Table {
 	char path[11];
 	byte attribute;
 	word startSec;
+	dword fileSize;
 };
 
 struct Table table[100];
@@ -33,6 +34,9 @@ void ls(FILE* fat12, int begin, char* path, int hasParam);//hasParam =0 -->ls();
 int  startwith(char x1[64], char x2[64]);
 int findDir(char str[64]);
 void load(char name[64], int begin, FILE* fat12);
+void lsl(FILE* fat12, int begin, char path[64], int hasParam);//ls -l
+int countdir(int begin, FILE* fat12);
+int counttxt(int begin, FILE* fat12);
 
 int main() {
 	preput("SYSTEM START!",0);
@@ -53,12 +57,12 @@ void input(FILE* fat12) {
 		{
 			break;
 		}
-		if (strcmp(str1,"cat")==0)
+		else if (strcmp(str1,"cat")==0)
 		{
 			scanf("%s", str2);//将路径名读到str2中
 
 		}
-		if (strcmp(str1, "ls") == 0) {//如果是ls指令
+		else if (strcmp(str1, "ls") == 0) {//如果是ls指令
 			char c = getchar();
 			if (c == '\n') {//如果不带参数，即为ls()指令，从根目录开始输出
 				ls(fat12, 19 * 512, "", 0);
@@ -70,12 +74,12 @@ void input(FILE* fat12) {
 					char c2 = getchar();
 					if (c2 == '\n')//ls -l()
 					{
-						ls(fat12, 19 * 512, "", 1);
+						lsl(fat12, 19 * 512, "", 1);
 					}
 					else {
 						scanf("%s", str3);
 						int beginx = findDir(str3);
-						ls(fat12, beginx, str3, 1);
+						lsl(fat12, beginx, str3, 1);
 					}
 				}
 				else {
@@ -85,23 +89,46 @@ void input(FILE* fat12) {
 						if (c3 == '\n')
 						{//ls + 路径
 							int beginx = findDir(str2);//findDir 返回str2目录的startsec
-							ls(fat12, beginx , str2, 0);
+							if (beginx==-1)
+							{
+								preput("未找到路径\n", 0);
+								preput("\n", 0);
+							}
+							else {
+
+								ls(fat12, beginx, str2, 0);
+							}
 						}
 						else {
+							scanf("%s", str3);
 							if (startwith(str3, "-l") || startwith(str3, "-ll"))
 							{//有第三段输入，且合法
 
 							}
 							else {//非法输入
 								preput("第三段输入非法", 0);
+								preput("\n", 0);
 							}
 						}
 					}
 				}
 			}
 		}
+		else {
+			preput("指令有误，注意大小写",0);
+		}
 	}
 }
+
+void lsl(FILE* fat12, int begin, char path[64], int hasParam) {
+	//-----
+	struct Node  node0;
+	struct Node* nodeptr = &node0; //初始化节点指针
+	preput(path, 0);
+	preput(" ", 0);
+
+}
+
 void ls(FILE* fat12, int begin, char path[64], int hasParam) {
 	struct Node  node0;
 	struct Node* nodeptr = &node0; //初始化节点指针
@@ -278,6 +305,10 @@ void load(char path[64], int begin, FILE* fat12) {
 			tempbegin = (nodeptr->startSec + 31) * 512;//该文件夹指向的簇
 			table[t_size].startSec = tempbegin;
 			t_size++;
+			if (nodeptr->attribute==0x00)
+			{
+				table[t_size].fileSize = nodeptr->fileSize;
+			}
 			if (nodeptr->attribute == 0x10)
 			{
 				load(temppath, tempbegin, fat12);//递归ls
@@ -287,14 +318,57 @@ void load(char path[64], int begin, FILE* fat12) {
 	return;
 }
 
+int countdir(int begin, FILE* fat12) {
+	struct Node  node0;
+	struct Node* nodeptr = &node0; //初始化节点指针
+	int dirNum=0;
+	for (int  i = 0; i < 15; i++)//直接遍历直属，
+	{
+		fseek(fat12, begin + i * 32, 0);
+		fread(nodeptr, 1, 32, fat12);
+		if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		{
+		}
+		else { continue; }
+		if (nodeptr->attribute==0x10)
+		{
+			dirNum++;
+		}
+	}
+	return dirNum;
+}
+
+int counttxt(int begin, FILE* fat12) {
+	struct Node  node0;
+	struct Node* nodeptr = &node0; //初始化节点指针
+	int txtNum = 0;
+	for (int i = 0; i < 15; i++)//直接遍历直属，
+	{
+		fseek(fat12, begin + i * 32, 0);
+		fread(nodeptr, 1, 32, fat12);
+		if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		{
+		}
+		else { continue; }
+		if (nodeptr->attribute == 0x00)
+		{
+			txtNum++;
+		}
+	}
+	return txtNum;
+}
+
 int findDir(char str[64]) {
+	int res = -1;
 	for (int i = 0; i < t_size; i++)
 	{
 		if (strcmp(str, table[i].path) == 0) {
 			return table[i].startSec;
 		}
 	}
+	return res;
 }
+
 void printTxtName(char name[11]) {
 	char temp[11];
 	for (int i = 0; i < 8; i++)
