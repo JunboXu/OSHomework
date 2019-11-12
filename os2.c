@@ -39,6 +39,7 @@ void load(char name[64], int begin, FILE* fat12);
 void lsl(FILE* fat12, int begin, char path[64], int hasParam);//ls -l
 int countdir(int begin, FILE* fat12);
 int counttxt(int begin, FILE* fat12);
+int cat(int begin, FILE* fat12,int fileSize);
 
 int main() {
 	preput("SYSTEM START!",0);
@@ -62,7 +63,18 @@ void input(FILE* fat12) {
 		else if (strcmp(str1,"cat")==0)
 		{
 			scanf("%s", str2);//将路径名读到str2中
+			int find = findDir(str2);
+			if (find==-1)
+			{
+				preput("未找到路径", 0);
+				preput("\n", 0);
+			}
+			else {
+				int index;
 
+
+				//cat(find, fat12);
+			}
 		}
 		else if (strcmp(str1, "ls") == 0) {//如果是ls指令
 			char c = getchar();
@@ -81,7 +93,14 @@ void input(FILE* fat12) {
 					else {
 						scanf("%s", str3);
 						int beginx = findDir(str3);
-						lsl(fat12, beginx, str3, 1);
+						if (beginx == -1)
+						{
+							preput("未找到路径\n", 0);
+							preput("\n", 0);
+						}
+						else {
+							lsl(fat12, beginx, str3, 1);
+						}
 					}
 				}
 				else {
@@ -118,6 +137,7 @@ void input(FILE* fat12) {
 		}
 		else {
 			preput("指令有误，注意大小写",0);
+			preput("\n", 0);
 		}
 	}
 }
@@ -507,6 +527,9 @@ int  startwith(char x1[64], char x2[64]) {
 		}
 	}
 	return res;
+}
+int cat(int begin, FILE* fat12,int fileSize) {
+
 }
 
 void preput(char x1[1024], int color) {
