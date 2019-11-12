@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+# include <stdlib.h>
 //全局定义区
 typedef unsigned char byte;
 typedef unsigned short word;
@@ -18,7 +19,8 @@ struct Node {
 };
 
 struct Table {
-	char path[11];
+	char path[64];
+	char name[11];
 	byte attribute;
 	word startSec;
 	dword fileSize;
@@ -124,8 +126,112 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam) {
 	//-----
 	struct Node  node0;
 	struct Node* nodeptr = &node0; //初始化节点指针
+	if (strlen(path)==0||path=="/")
+	{
+		path = "/";
+	}
 	preput(path, 0);
 	preput(" ", 0);
+	int beginx = findDir(path);
+	int dirn=countdir(begin, fat12);
+	int txtn = counttxt(begin, fat12);
+	char str[25];
+	preput(_itoa(dirn,str,10), 0);
+	preput(" ", 0);
+	preput(_itoa(txtn, str, 10), 0);
+	preput(":", 0);
+	preput("\n", 0);
+
+	for (int i = 0; i < 15; i++)//第一遍遍历打印直属内容
+	{
+		fseek(fat12, begin + i * 32, 0);
+		fread(nodeptr, 1, 32, fat12);
+		if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		{
+		}
+		else { continue; }
+		if (nodeptr->attribute==0x10)//如果是文件夹
+		{
+			int nameLen = 0;
+			char temp[11];
+			for (int i = 0; i < 11; i++)
+			{
+					if (nodeptr->name[i] == '\0' || nodeptr->name[i] == ' ') {
+						temp[i] = '\0';
+						break;
+					}
+					else {
+						temp[i] = nodeptr->name[i];
+						nameLen++;
+					}
+			}
+			preput(temp, 0);
+			preput(" ", 0);//打印文件夹名字
+			int beginx = (nodeptr->startSec+31)*512;
+			int dirn = countdir(beginx, fat12);
+			int txtn = counttxt(beginx, fat12);
+			char str[25];
+			preput(_itoa(dirn, str, 10), 0);
+			preput(" ", 0);
+			preput(_itoa(txtn, str, 10), 0);
+			preput("\n", 0);
+		}
+		else if (nodeptr->attribute==0x00)
+		{//如果是文本文件，打印大小
+			printTxtName(nodeptr->name);
+			preput(" ", 0);
+			char str[25];
+			preput(_itoa(nodeptr->fileSize,str,10), 0);
+			preput("\n", 0);
+		}
+	}
+	for (int i = 0; i < 15; i++)//再一个循环顺序判断直属是否为文件夹，是文件夹就进文件夹，打印
+	{
+		fseek(fat12, begin + i * 32, 0);
+		fread(nodeptr, 1, 32, fat12);
+		if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		{
+		}
+		else { continue; }
+		char temppath[64];
+		char nowName[64];
+		int tempbegin;
+		if (nodeptr->attribute == 0x10)//如果是文件夹，则将文件夹名称写入当前路径
+		{
+			char* gang = "/";
+			if (strlen(path) == 0 || path == "/")
+			{
+				path = "/";
+			}
+			else {
+				strcat(path, gang);
+			}
+			for (int i = 0; i < 64; i++)
+			{
+				temppath[i] = path[i];
+				if (path[i] == '\0' || path[i] == ' ')
+				{
+					temppath[i] = '\0';
+					break;
+				}
+			}//将当前路径存到temppath中
+			for (int i = 0; i < 64; i++)
+			{
+				nowName[i] = nodeptr->name[i];
+				if (nodeptr->name[i] == '\0' || nodeptr->name[i] == ' ')
+				{
+					nowName[i] = '\0';
+					break;
+				}
+			}
+			strcat(temppath, nowName);//写入当前路径
+
+			tempbegin = (nodeptr->startSec + 31) * 512;//跳转到该文件夹指向的簇
+
+			lsl(fat12, tempbegin, temppath, 0);//递归ls
+		}
+	}
+	return;
 
 }
 
@@ -224,12 +330,6 @@ void ls(FILE* fat12, int begin, char path[64], int hasParam) {
 			}
 		}
 	}
-	//--------ls -l +路径
-	if (hasParam)
-	{
-
-	}
-
 	return;
 }
 
@@ -298,6 +398,9 @@ void load(char path[64], int begin, FILE* fat12) {
 					}
 				}
 			}
+			strcpy(table[t_size].name, nowName);
+			preput(table[t_size].name, 0);
+			preput("\n", 0);
 			strcat(temppath, nowName);//写入当前路径
 			strcpy(table[t_size].path, temppath);
 			preput(table[t_size].path,0);
@@ -381,7 +484,7 @@ void printTxtName(char name[11]) {
 			temp[i] = name[i];
 		}
 	}
-	preput(temp, 0);
+	preput(temp, 1);
 	preput(".txt", 1);
 	preput(" ", 0);
 }
