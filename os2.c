@@ -104,7 +104,8 @@ void input(FILE* fat12) {
 							scanf("%s", str3);
 							if (startwith(str3, "-l") || startwith(str3, "-ll"))
 							{//有第三段输入，且合法
-
+								int beginx = findDir(str2);
+								lsl(fat12, beginx, str2, 1);
 							}
 							else {//非法输入
 								preput("第三段输入非法", 0);
