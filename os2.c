@@ -18,10 +18,10 @@ struct Node {
 };
 
 struct Table {
-	char name[11];
+	char path[11];
 	byte attribute;
 	word startSec;
-	dword fileSize;
+	
 };
 
 struct Table table[100];
@@ -39,7 +39,7 @@ int main() {
 	preput("SYSTEM START!",0);
 	preput("\n", 0);
 	FILE* fat12 = fopen("ref.img", "rb"); //打开文件
-	//load("/",19*512,fat12);
+	load("/",19*512,fat12);
 	input(fat12);
 }
 
@@ -75,8 +75,8 @@ void input(FILE* fat12) {
 					}
 					else {
 						scanf("%s", str3);
-						int st = findDir(str3);
-						ls(fat12, 19 * 512, str3, 1);
+						int beginx = findDir(str3);
+						ls(fat12, beginx, str3, 1);
 					}
 				}
 				else {
@@ -85,7 +85,8 @@ void input(FILE* fat12) {
 						char c3 = getchar();
 						if (c3 == '\n')
 						{//ls + 路径
-							ls(fat12, 19 * 512, str2, 1);
+							int beginx = findDir(str2);//findDir 返回str2目录的startsec
+							ls(fat12, beginx , str2, 0);
 						}
 						else {
 							if (startwith(str3, "-l") || startwith(str3, "-ll"))
@@ -217,22 +218,70 @@ void load(char path[64], int begin, FILE* fat12) {
 	//-----
 	struct Node  node0;
 	struct Node* nodeptr = &node0; //初始化节点指针
-	char temppath[64];
-	char nowName[64];
-	int tempbegin;
-	for (int i = 0; i < 15; i++) {//第一遍循环存放当前目录下的文件进表
+	for (int i = 0; i < 15; i++)//一个循环顺序判断直属是否为文件夹，是文件夹就进文件夹
+	{
 		fseek(fat12, begin + i * 32, 0);
 		fread(nodeptr, 1, 32, fat12);
-		if (nodeptr->attribute == 0x10 || nodeptr->attribute == 0x20) {//文件类型是文件夹0x10,文件0x20
-			if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		if ((nodeptr->name[0] >= 'A' && nodeptr->name[0] <= 'Z') || (nodeptr->name[0] >= 'a' && nodeptr->name[0] <= 'z') || (nodeptr->name[0] >= '0' && nodeptr->name[0] <= '9'))
+		{
+		}
+		else { continue; }
+		char temppath[64];
+		char nowName[64];
+		int tempbegin;
+		if (nodeptr->attribute == 0x10|| nodeptr->attribute == 0x00)//如果是文件夹，则将文件夹名称写入当前路径
+		{
+			char* gang = "/";
+			if (strlen(path) == 0 || path == "/")
 			{
+				path = "/";
 			}
-			else { continue; }
-
-			if (nodeptr->attribute == 0x20)//如果是文件夹，则将文件夹名称写入当前路径
+			else {
+				strcat(path, gang);
+			}
+			for (int i = 0; i < 64; i++)
 			{
-				table[t_size].attribute = nodeptr->attribute;
-			
+				temppath[i] = path[i];
+				if (path[i] == '\0' || path[i] == ' ')
+				{
+					temppath[i] = '\0';
+					break;
+				}
+			}//将当前路径存到temppath中
+			for (int i = 0; i < 64; i++)
+			{
+				nowName[i] = nodeptr->name[i];
+				if (nodeptr->attribute==0x10)
+				{
+					if (nodeptr->name[i] == '\0' || nodeptr->name[i] == ' ')
+					{
+						nowName[i] = '\0';
+						break;
+					}
+				}
+				if (nodeptr->attribute == 0x00)
+				{
+					if (nodeptr->name[i] == '\0' || nodeptr->name[i] == ' ')
+					{
+						nowName[i] = '.';
+						nowName[i+1] = 'T';
+						nowName[i+2] = 'X';
+						nowName[i+3] = 'T';
+						nowName[i + 4] = '\0';
+						break;
+					}
+				}
+			}
+			strcat(temppath, nowName);//写入当前路径
+			strcpy(table[t_size].path, temppath);
+			preput(table[t_size].path,0);
+			preput("\n", 0);
+			tempbegin = (nodeptr->startSec + 31) * 512;//该文件夹指向的簇
+			table[t_size].startSec = tempbegin;
+			t_size++;
+			if (nodeptr->attribute == 0x10)
+			{
+				load(temppath, tempbegin, fat12);//递归ls
 			}
 		}
 	}
