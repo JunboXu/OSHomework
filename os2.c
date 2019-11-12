@@ -21,7 +21,6 @@ struct Table {
 	char path[11];
 	byte attribute;
 	word startSec;
-	
 };
 
 struct Table table[100];
@@ -289,7 +288,12 @@ void load(char path[64], int begin, FILE* fat12) {
 }
 
 int findDir(char str[64]) {
-	
+	for (int i = 0; i < t_size; i++)
+	{
+		if (strcmp(str, table[i].path) == 0) {
+			return table[i].startSec;
+		}
+	}
 }
 void printTxtName(char name[11]) {
 	char temp[11];
