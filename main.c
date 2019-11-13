@@ -32,30 +32,30 @@ struct Table table[100];
 int t_size = 0;
 
 void preput(char x1[1024], int color); //打印函数
-void input(FILE* fat);
+void input(FILE *fat);
 void printTxtName(char name[11]);
-void ls(FILE* fat12, int begin, char* path, int hasParam); //hasParam =0 -->ls();   1-->ls -l; ;  2-->ls -l 路径
+void ls(FILE *fat12, int begin, char *path, int hasParam); //hasParam =0 -->ls();   1-->ls -l; ;  2-->ls -l 路径
 int startwith(char x1[64], char x2[64]);
 int findDir(char str[64]);
-void load(char name[64], int begin, FILE* fat12);
-void lsl(FILE* fat12, int begin, char path[64], int hasParam); //ls -l
-int countdir(int begin, FILE* fat12);
-int counttxt(int begin, FILE* fat12);
+void load(char name[64], int begin, FILE *fat12);
+void lsl(FILE *fat12, int begin, char path[64], int hasParam); //ls -l
+int countdir(int begin, FILE *fat12);
+int counttxt(int begin, FILE *fat12);
 //int cat(int begin, FILE* fat12, int fileSize);
-void cat(FILE* fat12, char str1[64]);
+void cat(FILE *fat12, char str1[64]);
 extern void output(char x1[1024], int color, int len); // 颜色参数：0 文件夹，1 文件，2 其他
-char* itoa(int value, char* result, int base);
+char *itoa(int value, char *result, int base);
 int findtxtSize(char str[64]);
 int main()
 {
 	preput("SYSTEM START!", 0);
 	preput("\n", 2);
-	FILE* fat12 = fopen("ref.img", "rb"); //打开文件
+	FILE *fat12 = fopen("ref.img", "rb"); //打开文件
 	load("/", 19 * 512, fat12);
 	input(fat12);
 }
 
-void input(FILE* fat12)
+void input(FILE *fat12)
 {
 	char str1[64];
 	char str2[64];
@@ -80,15 +80,15 @@ void input(FILE* fat12)
 			else
 			{
 				int index = findDir(str2);
-				//preput(str2, 1);
+				preput(str2, 1);
 				if (index == -1) //cat dir??
 				{
 					preput("未找到路径", 2);
 				}
 				else
 				{
-					//preput("cat begin", 2);
-					//preput("\n", 2);
+					preput("cat begin", 2);
+					preput("\n", 2);
 					cat(fat12, str2);
 
 					//char* nodeptr; //初始化节点指针
@@ -176,11 +176,11 @@ void input(FILE* fat12)
 	}
 }
 
-void lsl(FILE* fat12, int begin, char path[64], int hasParam)
+void lsl(FILE *fat12, int begin, char path[64], int hasParam)
 {
 	//-----
 	struct Node node0;
-	struct Node* nodeptr = &node0; //初始化节点指针
+	struct Node *nodeptr = &node0; //初始化节点指针
 	if (strlen(path) == 0 || path == "/")
 	{
 		path = "/";
@@ -191,9 +191,9 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam)
 	int dirn = countdir(begin, fat12);
 	int txtn = counttxt(begin, fat12);
 	char str[25];
-	preput(_itoa(dirn, str, 10), 2);
+	preput(itoa(dirn, str, 10), 2);
 	preput(" ", 2);
-	preput(_itoa(txtn, str, 10), 2);
+	preput(itoa(txtn, str, 10), 2);
 	preput(":", 2);
 	preput("\n", 2);
 	if ((strlen(path) != 0) && (strlen(path) != 1))
@@ -237,9 +237,9 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam)
 			int dirn = countdir(beginx, fat12);
 			int txtn = counttxt(beginx, fat12);
 			char str[25];
-			preput(_itoa(dirn, str, 10), 2);
+			preput(itoa(dirn, str, 10), 2);
 			preput(" ", 2);
-			preput(_itoa(txtn, str, 10), 2);
+			preput(itoa(txtn, str, 10), 2);
 			preput("\n", 2);
 		}
 		else if (nodeptr->attribute == 0x00)
@@ -247,7 +247,7 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam)
 			printTxtName(nodeptr->name);
 			preput(" ", 2);
 			char str[25];
-			preput(_itoa(nodeptr->fileSize, str, 10), 2);
+			preput(itoa(nodeptr->fileSize, str, 10), 2);
 			preput("\n", 2);
 		}
 	}
@@ -267,7 +267,7 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam)
 		int tempbegin;
 		if (nodeptr->attribute == 0x10) //如果是文件夹，则将文件夹名称写入当前路径
 		{
-			char* gang = "/";
+			char *gang = "/";
 			if (strlen(path) == 0 || path == "/")
 			{
 				path = "/";
@@ -304,10 +304,10 @@ void lsl(FILE* fat12, int begin, char path[64], int hasParam)
 	return;
 }
 
-void ls(FILE* fat12, int begin, char path[64], int hasParam)
+void ls(FILE *fat12, int begin, char path[64], int hasParam)
 {
 	struct Node node0;
-	struct Node* nodeptr = &node0; //初始化节点指针
+	struct Node *nodeptr = &node0; //初始化节点指针
 	if (hasParam == 0)
 	{
 		preput(path, 2);
@@ -374,7 +374,7 @@ void ls(FILE* fat12, int begin, char path[64], int hasParam)
 			int tempbegin;
 			if (nodeptr->attribute == 0x10) //如果是文件夹，则将文件夹名称写入当前路径
 			{
-				char* gang = "/";
+				char *gang = "/";
 				if (strlen(path) == 0 || path == "/")
 				{
 					path = "/";
@@ -419,11 +419,11 @@ void ls(FILE* fat12, int begin, char path[64], int hasParam)
  *
  */
 
-void load(char path[64], int begin, FILE* fat12)
+void load(char path[64], int begin, FILE *fat12)
 {
 	//-----
 	struct Node node0;
-	struct Node* nodeptr = &node0; //初始化节点指针
+	struct Node *nodeptr = &node0; //初始化节点指针
 	for (int i = 0; i < 15; i++)   //一个循环顺序判断直属是否为文件夹，是文件夹就进文件夹
 	{
 		fseek(fat12, begin + i * 32, 0);
@@ -440,7 +440,7 @@ void load(char path[64], int begin, FILE* fat12)
 		int tempbegin;
 		if (nodeptr->attribute == 0x10 || nodeptr->attribute == 0x00) //如果是文件夹，则将文件夹名称写入当前路径
 		{
-			char* gang = "/";
+			char *gang = "/";
 			if (strlen(path) == 0 || path == "/")
 			{
 				path = "/";
@@ -505,10 +505,10 @@ void load(char path[64], int begin, FILE* fat12)
 	return;
 }
 
-int countdir(int begin, FILE* fat12)
+int countdir(int begin, FILE *fat12)
 {
 	struct Node node0;
-	struct Node* nodeptr = &node0; //初始化节点指针
+	struct Node *nodeptr = &node0; //初始化节点指针
 	int dirNum = 0;
 	for (int i = 0; i < 15; i++) //直接遍历直属，
 	{
@@ -529,10 +529,10 @@ int countdir(int begin, FILE* fat12)
 	return dirNum;
 }
 
-int counttxt(int begin, FILE* fat12)
+int counttxt(int begin, FILE *fat12)
 {
 	struct Node node0;
-	struct Node* nodeptr = &node0; //初始化节点指针
+	struct Node *nodeptr = &node0; //初始化节点指针
 	int txtNum = 0;
 	for (int i = 0; i < 15; i++) //直接遍历直属，
 	{
@@ -620,17 +620,17 @@ int startwith(char x1[64], char x2[64])
 void preput(char x1[1024], int color)
 {
 	int len = 0;
-	char put[512];
+	char put[64];
 	while (x1[len] != '\0')
 	{
 		len++;
 	}
 	strcpy(put, x1);
-	printf("%s", put);
-	//output(put, color, len);
+	//printf("%s", put);
+	output(put, color, len);
 }
 
-void cat(FILE* fat12, char* str1)
+void cat(FILE *fat12, char *str1)
 {
 	char fileContent[2048];
 	int filepos = -1;
@@ -652,7 +652,7 @@ void cat(FILE* fat12, char* str1)
 }
 
 // 十进制整数转字串
-char* itoa(int value, char* result, int base)
+char *itoa(int value, char *result, int base)
 {
 	// 检查是否为合法进制数
 	if (base < 2 || base > 36)
@@ -661,7 +661,7 @@ char* itoa(int value, char* result, int base)
 		return result;
 	}
 
-	char* ptr = result, * ptr1 = result, tmp_char;
+	char *ptr = result, *ptr1 = result, tmp_char;
 	int tmp_value;
 
 	do
